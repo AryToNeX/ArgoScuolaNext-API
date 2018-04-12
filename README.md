@@ -20,6 +20,8 @@ Alright, so how do we use these APIs? Just look at these pieces of code, they ar
 ```php
 <?php
 
+date_default_timezone_set('UTC');
+
 const SCHOOL_CODE = "XX12345", USER = "someguy", PASSWORD = "somepass";
 
 try{
