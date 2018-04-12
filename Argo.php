@@ -18,7 +18,7 @@
 
 class Argo{
 
-	// COSTANTI
+	// COSTANTI --------------------------------------------------------------------------------------------------------
 
 	/** L'url delle REST API di Argo ScuolaNext */
 	const ARGO_URL = "https://www.portaleargo.it/famiglia/api/rest/";
@@ -29,7 +29,7 @@ class Argo{
 	/** Versione delle REST API di Argo ScuolaNext */
 	const ARGO_VERSION = "2.0.2";
 
-	// VARIABILI
+	// VARIABILI -------------------------------------------------------------------------------------------------------
 
 	/**
 	 * @var string $schoolCode  Codice scuola
@@ -44,7 +44,7 @@ class Argo{
 	 */
 	private $schoolCode, $accountType, $authToken, $userInfo, $classInfo, $schoolInfo, $yearInfo, $features, $argoData;
 
-	// METODI
+	// METODI API ------------------------------------------------------------------------------------------------------
 
 	/**
 	 * Costruttore delle API, volutamente vuoto
@@ -308,6 +308,8 @@ class Argo{
 			return null;
 		}
 	}
+
+	// METODI INTERNI --------------------------------------------------------------------------------------------------
 
 	/**
 	 * Metodo interno per richieste generiche ad Argo ScuolaNext
