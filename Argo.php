@@ -71,6 +71,163 @@ class Argo{
 	}
 
 	/**
+	 * Metodo per salvare la sessione su file
+	 *
+	 * @param string $loginDataFile Directory relativa al file dei dati di sessione che si intende creare
+	 */
+	public function saveSession(string $loginDataFile){
+		file_put_contents($loginDataFile, json_encode(array(
+			"schoolCode"  => $this->schoolCode,
+			"accountType" => $this->accountType,
+			"authToken"   => $this->authToken
+		)));
+	}
+
+	/**
+	 * Metodo di login ad Argo ScuolaNext con sessione salvata su file
+	 *
+	 * @param string $loginDataFile Directory relativa al file dei dati di sessione
+	 *
+	 * @throws Exception
+	 */
+	public function sessionLogin(string $loginDataFile){
+		$data = json_decode(file_get_contents($loginDataFile), true);
+		$this->schoolCode = $data["schoolCode"];
+		$this->accountType = $data["accountType"];
+		$this->authToken = $data["authToken"];
+		$this->argo_populateInfo();
+	}
+
+	/**
+	 * Metodo getter per avere le informazioni sul tipo di account usato per il login
+	 *
+	 * @return string
+	 */
+	public function getAccountType(): string{
+		return $this->accountType;
+	}
+
+	/**
+	 * Metodo getter per avere le informazioni sull'alunno
+	 *
+	 * @return array
+	 */
+	public function getUserInfo(): array{
+		return $this->userInfo;
+	}
+
+	/**
+	 * Metodo getter per avere le informazioni sulla classe di appartenenza dell'alunno
+	 *
+	 * @return array
+	 */
+	public function getClassInfo(): array{
+		return $this->classInfo;
+	}
+
+	/**
+	 * Metodo getter per avere le informazioni sulla scuola di appartenenza dell'alunno
+	 *
+	 * @return array
+	 */
+	public function getSchoolInfo(): array{
+		return $this->schoolInfo;
+	}
+
+	/**
+	 * Metodo getter per avere le informazioni sull'anno scolastico
+	 *
+	 * @return array
+	 */
+	public function getYearInfo(): array{
+		return $this->yearInfo;
+	}
+
+	/**
+	 * Metodo getter per avere le informazioni sulle funzioni abilitate sulla piattaforma ScuolaNext
+	 *
+	 * @return array
+	 */
+	public function getFeatures(): array{
+		return $this->features;
+	}
+
+	/**
+	 * Metodo per ottenere il riepilogo della giornata
+	 * @deprecated poiché redirect a $this->oggi()
+	 * Scritto solo per 'facilitare' lo switch a questa API dalla API di Cristian Livella
+	 *
+	 * @param string|null $data Data in formato 'Y-m-d' del giorno voluto
+	 *
+	 * @return array|null
+	 */
+	public function oggiScuola(string $data = null): array{
+		if(isset($data)) $data = date_create_from_format("!Y-m-d", $data)->getTimestamp();
+
+		return $this->oggi($data);
+	}
+
+	/**
+	 * Metodo per ottenere il riepilogo della giornata
+	 *
+	 * @param int|null $data UNIX Timestamp del giorno voluto
+	 *
+	 * @return array|null
+	 */
+	public function oggi(int $data = null): array{
+		try{
+			return $this->argo_genericRequest("oggi", array("datGiorno" => date("Y-m-d", $data ?? time())))["dati"];
+		}catch(Exception $e){
+			return null;
+		}
+	}
+	
+	/**
+	 * Metodo per ottenere una lista dei docenti della classe
+	 * @deprecated poiché redirect a $this->docentiClasse();
+	 * Scritto solo per 'facilitare' lo switch a questa API dalla API di Christian Livella
+	 *
+	 * @return array|null
+	 */
+	public function docenti(): array{
+		return $this->docenticlasse();
+	}
+
+	/**
+	 * Metodo per chiamate non definite alle API ScuolaNext
+	 *
+	 * Chiamate possibili:
+	 * - schede (Già chiamata nel metodo interno argo_populateInfo(), meglio usare i getter)
+	 * - assenze
+	 * - notedisciplinari
+	 * - votigiornalieri
+	 * - votiscrutinio
+	 * - compiti
+	 * - argomenti
+	 * - promemoria
+	 * - orario
+	 * - docenticlasse
+	 * - Qualsiasi altra chiamata non listata ma compatibile con le API ScuolaNext
+	 *
+	 * @param string $name      Nome del metodo API da chiamare
+	 * @param array  $arguments Argomenti GET delle API da passare
+	 *
+	 * @return array|null
+	 */
+	public function __call(string $name, array $arguments): array{
+		try{
+			if(in_array(strtolower($name), ["votiscrutinio", "docenticlasse"]))
+				return $this->argo_genericRequest(strtolower($name), $arguments);
+			else
+				return $this->argo_genericRequest(strtolower($name), $arguments)["dati"];
+		}catch(Exception $e){
+			return null;
+		}
+	}
+
+	// METODI INTERNI --------------------------------------------------------------------------------------------------
+
+	/**
 	 * Metodo interno di login ad Argo ScuolaNext con username e password
 	 *
 	 * @param string $username Nome utente
@@ -198,120 +355,6 @@ class Argo{
 	}
 
 	/**
-	 * Metodo per salvare la sessione su file
-	 *
-	 * @param string $loginDataFile Directory relativa al file dei dati di sessione che si intende creare
-	 */
-	public function saveSession(string $loginDataFile){
-		file_put_contents($loginDataFile, json_encode(array(
-			"schoolCode"  => $this->schoolCode,
-			"accountType" => $this->accountType,
-			"authToken"   => $this->authToken
-		)));
-	}
-
-	/**
-	 * Metodo di login ad Argo ScuolaNext con sessione salvata su file
-	 *
-	 * @param string $loginDataFile Directory relativa al file dei dati di sessione
-	 *
-	 * @throws Exception
-	 */
-	public function sessionLogin(string $loginDataFile){
-		$data = json_decode(file_get_contents($loginDataFile), true);
-		$this->schoolCode = $data["schoolCode"];
-		$this->accountType = $data["accountType"];
-		$this->authToken = $data["authToken"];
-		$this->argo_populateInfo();
-	}
-
-	/**
-	 * Metodo getter per avere le informazioni sul tipo di account usato per il login
-	 *
-	 * @return string
-	 */
-	public function getAccountType(): string{
-		return $this->accountType;
-	}
-
-	/**
-	 * Metodo getter per avere le informazioni sull'alunno
-	 *
-	 * @return array
-	 */
-	public function getUserInfo(): array{
-		return $this->userInfo;
-	}
-
-	/**
-	 * Metodo getter per avere le informazioni sulla classe di appartenenza dell'alunno
-	 *
-	 * @return array
-	 */
-	public function getClassInfo(): array{
-		return $this->classInfo;
-	}
-
-	/**
-	 * Metodo getter per avere le informazioni sulla scuola di appartenenza dell'alunno
-	 *
-	 * @return array
-	 */
-	public function getSchoolInfo(): array{
-		return $this->schoolInfo;
-	}
-
-	/**
-	 * Metodo getter per avere le informazioni sull'anno scolastico
-	 *
-	 * @return array
-	 */
-	public function getYearInfo(): array{
-		return $this->yearInfo;
-	}
-
-	/**
-	 * Metodo getter per avere le informazioni sulle funzioni abilitate sulla piattaforma ScuolaNext
-	 *
-	 * @return array
-	 */
-	public function getFeatures(): array{
-		return $this->features;
-	}
-
-	/**
-	 * Metodo per ottenere il riepilogo della giornata
-	 * @deprecated poiché redirect a $this->oggi()
-	 * Scritto solo per 'facilitare' lo switch a questa API dalla API di Cristian Livella
-	 *
-	 * @param string|null $data Data in formato 'Y-m-d' del giorno voluto
-	 *
-	 * @return array|null
-	 */
-	public function oggiScuola(string $data = null): array{
-		if(isset($data)) $data = date_create_from_format("!Y-m-d", $data)->getTimestamp();
-
-		return $this->oggi($data);
-	}
-
-	/**
-	 * Metodo per ottenere il riepilogo della giornata
-	 *
-	 * @param int|null $data UNIX Timestamp del giorno voluto
-	 *
-	 * @return array|null
-	 */
-	public function oggi(int $data = null): array{
-		try{
-			return $this->argo_genericRequest("oggi", array("datGiorno" => date("Y-m-d", $data ?? time())))["dati"];
-		}catch(Exception $e){
-			return null;
-		}
-	}
-
-	// METODI INTERNI --------------------------------------------------------------------------------------------------
-
-	/**
 	 * Metodo interno per richieste generiche ad Argo ScuolaNext
 	 *
 	 * @param string $request Metodo delle API ScuolaNext da chiamare
@@ -343,48 +386,5 @@ class Argo{
 		curl_close($ch);
 
 		return json_decode($output, true);
-	}
-
-	/**
-	 * Metodo per ottenere una lista dei docenti della classe
-	 * @deprecated poiché redirect a $this->docentiClasse();
-	 * Scritto solo per 'facilitare' lo switch a questa API dalla API di Christian Livella
-	 *
-	 * @return array|null
-	 */
-	public function docenti(): array{
-		return $this->docenticlasse();
-	}
-
-	/**
-	 * Metodo per chiamate non definite alle API ScuolaNext
-	 *
-	 * Chiamate possibili:
-	 * - schede (Già chiamata nel metodo interno argo_populateInfo(), meglio usare i getter)
-	 * - assenze
-	 * - notedisciplinari
-	 * - votigiornalieri
-	 * - votiscrutinio
-	 * - compiti
-	 * - argomenti
-	 * - promemoria
-	 * - orario
-	 * - docenticlasse
-	 * - Qualsiasi altra chiamata non listata ma compatibile con le API ScuolaNext
-	 *
-	 * @param string $name      Nome del metodo API da chiamare
-	 * @param array  $arguments Argomenti GET delle API da passare
-	 *
-	 * @return array|null
-	 */
-	public function __call(string $name, array $arguments): array{
-		try{
-			if(in_array(strtolower($name), ["votiscrutinio", "docenticlasse"]))
-				return $this->argo_genericRequest(strtolower($name), $arguments);
-			else
-				return $this->argo_genericRequest(strtolower($name), $arguments)["dati"];
-		}catch(Exception $e){
-			return null;
-		}
 	}
 }
