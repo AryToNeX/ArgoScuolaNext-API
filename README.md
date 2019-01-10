@@ -9,7 +9,7 @@ So what's different with those APIs, you may ask?
 
 - These APIs are simpler. I mean, really. No JSON tinkering, simple method calls, _it just works_.
 - These APIs can store a session and recover it instead of using username and password every time _and that means security_.
-- These APIs use PHP 7 and its features, _just because we love typehinting and return types_.
+- These APIs use PHP 7.2 and its features, _just because we love typehinting and return types_.
 
 ## Usage
 
@@ -64,7 +64,7 @@ $compiti = $argo->compiti();
 var_dump($compiti);
 ```
 
-## Possible calls
+## Possible calls (please note these are methods, not variables)
 
 - schede (Already used when logging in, so please use the getter methods)
 - assenze
