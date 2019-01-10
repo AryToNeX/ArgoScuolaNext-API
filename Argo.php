@@ -61,13 +61,23 @@ class Argo{
 	 * @param string $password      Password dell'utente
 	 * @param string $loginDataFile Directory relativa al file dei dati di sessione che si intende creare
 	 *
-	 * @throws Exception
+	 * @return bool
 	 */
-	public function passwordLogin(string $schoolCode, string $username, string $password, string $loginDataFile = null){
+	public function passwordLogin(string $schoolCode, string $username, string $password, string $loginDataFile = null): bool{
 		$this->schoolCode = $schoolCode;
-		$this->argo_getToken($username, $password);
-		$this->argo_populateInfo();
-		if(isset($loginDataFile)) $this->saveSession($loginDataFile);
+		try{
+			$this->argo_getToken($username, $password);
+			$this->argo_populateInfo();
+		}catch(Exception $e){
+			return false;
+		}
+		
+		if(isset($loginDataFile)){
+			if($this->saveSession($loginDataFile) === false)
+				echo "Login effettuato, ma è stato impossibile salvare il token in un file.\n";
+		}
+		
+		return true;
 	}
 
 	/**
@@ -75,12 +85,12 @@ class Argo{
 	 *
 	 * @param string $loginDataFile Directory relativa al file dei dati di sessione che si intende creare
 	 */
-	public function saveSession(string $loginDataFile){
-		file_put_contents($loginDataFile, json_encode(array(
+	public function saveSession(string $loginDataFile): bool{
+		return (file_put_contents($loginDataFile, json_encode(array(
 			"schoolCode"  => $this->schoolCode,
 			"accountType" => $this->accountType,
 			"authToken"   => $this->authToken
-		)));
+		))) !== false ? true : false);
 	}
 
 	/**
@@ -88,14 +98,20 @@ class Argo{
 	 *
 	 * @param string $loginDataFile Directory relativa al file dei dati di sessione
 	 *
-	 * @throws Exception
+	 * @return bool
 	 */
-	public function sessionLogin(string $loginDataFile){
+	public function sessionLogin(string $loginDataFile): bool{
 		$data = json_decode(file_get_contents($loginDataFile), true);
 		$this->schoolCode = $data["schoolCode"];
 		$this->accountType = $data["accountType"];
 		$this->authToken = $data["authToken"];
-		$this->argo_populateInfo();
+		try{
+			$this->argo_populateInfo();
+		}catch(Exception $e){
+			return false;
+		}
+		
+		return true;
 	}
 
 	/**
@@ -161,7 +177,7 @@ class Argo{
 	 *
 	 * @return array|null
 	 */
-	public function oggiScuola(string $data = null): array{
+	public function oggiScuola(string $data = null): ?array{
 		if(isset($data)) $data = date_create_from_format("!Y-m-d", $data)->getTimestamp();
 
 		return $this->oggi($data);
@@ -174,7 +190,7 @@ class Argo{
 	 *
 	 * @return array|null
 	 */
-	public function oggi(int $data = null): array{
+	public function oggi(int $data = null): ?array{
 		try{
 			return $this->argo_genericRequest("oggi", array("datGiorno" => date("Y-m-d", $data ?? time())))["dati"];
 		}catch(Exception $e){
@@ -189,7 +205,7 @@ class Argo{
 	 *
 	 * @return array|null
 	 */
-	public function docenti(): array{
+	public function docenti(): ?array{
 		return $this->docenticlasse();
 	}
 
@@ -214,7 +230,7 @@ class Argo{
 	 *
 	 * @return array|null
 	 */
-	public function __call(string $name, array $arguments): array{
+	public function __call(string $name, array $arguments): ?array{
 		try{
 			if(in_array(strtolower($name), ["votiscrutinio", "docenticlasse"]))
 				return $this->argo_genericRequest(strtolower($name), $arguments);
