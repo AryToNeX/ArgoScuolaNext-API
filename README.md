@@ -1,3 +1,6 @@
+# Not working as of October 2019. Sorry.
+## I won't be updating this.
+
 # ArgoScuolaNext-API, build your PHP school projects with ease!
 
 This project was built from scratch, but it was also hugely inspired by those other APIs built over Argo ScuolaNext:
